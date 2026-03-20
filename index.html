@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Critical Thinking Agent · Data Career</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --card: #16161f;
+  --border: #2a2a3a;
+  --accent: #00e5a0;
+  --accent2: #7c5cfc;
+  --accent3: #ff6b35;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --danger: #ff4757;
+  --warn: #ffd60a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ── HEADER ── */
+header {
+  position: relative; z-index: 20;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.logo-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.header-title {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+}
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.stage-badge {
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  color: var(--warn); letter-spacing: .08em;
+}
+.view-toggle {
+  display: flex; gap: 4px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px;
+}
+.vtbtn {
+  padding: 4px 10px; border-radius: 5px; border: none; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  background: transparent; color: var(--muted); transition: all .15s;
+}
+.vtbtn.active { background: var(--accent); color: var(--bg); font-weight: 600; }
+
+/* ── MAIN LAYOUT ── */
+.app {
+  position: relative; z-index: 10;
+  flex: 1; display: flex; overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sidebar-scroll { flex: 1; overflow-y: auto; padding: 16px 14px; }
+.sidebar-scroll::-webkit-scrollbar { width: 3px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); }
+
+.slabel {
+  font-size: 9px; letter-spacing: .14em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+}
+
+.stage-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 10px; border-radius: 7px; cursor: pointer;
+  transition: all .2s; border: 1px solid transparent; margin-bottom: 3px;
+}
+.stage-item:hover:not(.locked) { background: var(--card); border-color: var(--border); }
+.stage-item.active { background: rgba(0,229,160,.06); border-color: rgba(0,229,160,.25); }
+.stage-item.locked { opacity: .3; cursor: not-allowed; }
+.snum {
+  width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 9px; margin-top: 1px;
+}
+.stage-item.active .snum { background: var(--accent); color: var(--bg); }
+.stage-item.completed .snum { background: rgba(0,229,160,.15); color: var(--accent); }
+.stage-item:not(.active):not(.completed):not(.locked) .snum,
+.stage-item.locked .snum { background: var(--border); color: var(--muted); }
+.sname { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+.stage-item.active .sname { color: var(--accent); }
+.sdesc { font-size: 9px; color: var(--muted); line-height: 1.4; }
+
+.mode-pills { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 5px; flex-wrap: wrap; }
+.pill {
+  padding: 3px 9px; border-radius: 20px; font-size: 9px; font-weight: 600;
+  letter-spacing: .07em; text-transform: uppercase;
+  border: 1px solid var(--border); background: transparent; color: var(--muted);
+  cursor: pointer; transition: all .15s; font-family: 'JetBrains Mono', monospace;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active { background: rgba(0,229,160,.1); border-color: var(--accent); color: var(--accent); }
+
+.xp-box { padding: 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.xp-row { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+.xp-track { background: var(--border); border-radius: 3px; height: 4px; margin-bottom: 6px; }
+.xp-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .8s ease; }
+.xp-next { font-size: 9px; color: var(--muted); }
+
+/* ── CENTER: CHAT ── */
+.chat-panel {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  min-width: 0;
+}
+.chat-header {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.ch-icon { font-size: 16px; }
+.ch-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; }
+.ch-desc { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+.messages {
+  flex: 1; overflow-y: auto; padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.messages::-webkit-scrollbar { width: 3px; }
+.messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+.msg { display: flex; gap: 10px; animation: msgIn .25s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+.msg.user { flex-direction: row-reverse; }
+.av {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; margin-top: 2px;
+}
+.av.agent { background: rgba(0,229,160,.1); border: 1px solid rgba(0,229,160,.2); }
+.av.usr { background: rgba(124,92,252,.12); border: 1px solid rgba(124,92,252,.25); }
+.bubble {
+  max-width: 76%; padding: 11px 14px; border-radius: 10px;
+  font-size: 11.5px; line-height: 1.75;
+}
+.msg.agent .bubble { background: var(--card); border: 1px solid var(--border); border-top-left-radius: 3px; }
+.msg.user .bubble { background: rgba(124,92,252,.12); border: 1px solid rgba(124,92,252,.2); border-top-right-radius: 3px; }
+.bubble strong { color: var(--accent); font-weight: 500; }
+.bubble em { color: var(--accent3); font-style: normal; }
+
+/* canvas trigger chip inside bubble */
+.canvas-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(124,92,252,.15); border: 1px solid rgba(124,92,252,.3);
+  border-radius: 6px; padding: 5px 10px; margin-top: 8px;
+  font-size: 10px; color: var(--accent2); cursor: pointer;
+  transition: all .15s;
+}
+.canvas-chip:hover { background: rgba(124,92,252,.25); }
+
+.input-area {
+  padding: 10px 20px 14px; border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 7px; flex-shrink: 0;
+}
+.quick-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.qbtn {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.qbtn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,.04); }
+.input-row { display: flex; gap: 7px; align-items: flex-end; }
+.ibox {
+  flex: 1; background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 13px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
+  resize: none; outline: none; min-height: 38px; max-height: 100px;
+  transition: border-color .2s; overflow-y: auto;
+}
+.ibox:focus { border-color: var(--accent); }
+.ibox::placeholder { color: var(--muted); }
+.sbtn {
+  width: 38px; height: 38px; background: var(--accent); border: none;
+  border-radius: 8px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 16px; font-weight: bold;
+  color: var(--bg); transition: all .15s; flex-shrink: 0;
+}
+.sbtn:hover { background: #00c88a; transform: scale(1.04); }
+.sbtn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+.ldots { display: flex; gap: 4px; padding: 3px 0; }
+.ldots span {
+  width: 5px; height: 5px; background: var(--accent);
+  border-radius: 50%; animation: dot 1.2s infinite;
+}
+.ldots span:nth-child(2){animation-delay:.2s}
+.ldots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* ── VISUAL CANVAS PANEL ── */
+.canvas-panel {
+  width: 420px; flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: width .3s ease;
+}
+.canvas-panel.collapsed { width: 0; border: none; }
+
+.canvas-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.canvas-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; flex: 1; }
+.canvas-toolbar { display: flex; gap: 5px; }
+.ctbtn {
+  padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted); font-size: 9px;
+  font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all .15s;
+}
+.ctbtn:hover { border-color: var(--accent); color: var(--accent); }
+.ctbtn.active { background: rgba(0,229,160,.1); border-color: var(--accent); color: var(--accent); }
+
+.canvas-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.ctab {
+  flex: 1; padding: 7px 4px; text-align: center; font-size: 9px;
+  color: var(--muted); cursor: pointer; border-right: 1px solid var(--border);
+  transition: all .15s; letter-spacing: .05em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ctab:last-child { border-right: none; }
+.ctab:hover { color: var(--text); background: rgba(255,255,255,.02); }
+.ctab.active { color: var(--accent); background: rgba(0,229,160,.05); }
+
+.canvas-body { flex: 1; overflow-y: auto; padding: 16px; }
+.canvas-body::-webkit-scrollbar { width: 3px; }
+.canvas-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* CANVAS VISUAL ELEMENTS */
+.cv-placeholder {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; color: var(--muted);
+  text-align: center; padding: 20px;
+}
+.cv-placeholder .big { font-size: 32px; }
+.cv-placeholder p { font-size: 11px; line-height: 1.6; }
+
+/* Framework boxes */
+.fw-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; margin-bottom: 12px;
+  animation: boxIn .3s ease;
+}
+@keyframes boxIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fw-title {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.fw-title .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Story spine */
+.story-spine { display: flex; flex-direction: column; gap: 0; }
+.spine-item {
+  display: flex; align-items: flex-start; gap: 10px; position: relative;
+}
+.spine-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 11px; top: 22px;
+  width: 2px; height: calc(100% + 2px);
+  background: linear-gradient(var(--border), transparent);
+}
+.spine-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; z-index: 1; margin-top: 2px;
+}
+.spine-content { flex: 1; padding-bottom: 14px; }
+.spine-label {
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  margin-bottom: 3px;
+}
+.spine-text { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.spine-input {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 5px; padding: 5px 8px; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text); outline: none; margin-top: 4px;
+  transition: border-color .2s;
+}
+.spine-input:focus { border-color: var(--accent); }
+.spine-input::placeholder { color: var(--muted); }
+
+/* System map */
+.sys-map { position: relative; }
+.sys-svg { width: 100%; }
+.sys-node-label { font-family: 'JetBrains Mono', monospace; }
+
+/* Matrix 2x2 */
+.matrix-2x2 {
+  display: grid; grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr; gap: 4px;
+  aspect-ratio: 1; width: 100%;
+}
+.matrix-cell {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; display: flex;
+  flex-direction: column; gap: 4px; min-height: 80px;
+  transition: border-color .2s;
+}
+.matrix-cell:hover { border-color: var(--accent); }
+.mc-label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.mc-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted);
+  resize: none; line-height: 1.5;
+}
+
+/* Pyramid */
+.pyramid { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.pyr-level {
+  border-radius: 6px; padding: 8px 12px; text-align: center;
+  display: flex; flex-direction: column; gap: 2px; transition: all .2s;
+}
+.pyr-lname { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; }
+.pyr-ltext { font-size: 9px; opacity: .7; }
+
+/* Causal chain */
+.causal-chain { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.causal-node {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 12px; font-size: 10px;
+  text-align: center; min-width: 80px; transition: border-color .2s; flex: 1;
+}
+.causal-node:hover { border-color: var(--accent2); }
+.causal-node textarea {
+  width: 100%; background: transparent; border: none; outline: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text);
+  resize: none; text-align: center; line-height: 1.4;
+}
+.causal-arrow { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+/* Stakeholder map */
+.stakeholder-map { position: relative; }
+.sh-svg { width: 100%; border-radius: 8px; }
+
+/* AI generate btn */
+.ai-gen-btn {
+  width: 100%; padding: 9px; background: rgba(124,92,252,.1);
+  border: 1px solid rgba(124,92,252,.25); border-radius: 8px;
+  color: var(--accent2); font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; cursor: pointer; transition: all .2s; margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.ai-gen-btn:hover { background: rgba(124,92,252,.2); border-color: var(--accent2); }
+.ai-gen-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── ONBOARDING OVERLAY ── */
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(10,10,15,.92);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.onboarding-overlay.hidden { display: none; }
+
+.ob-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 560px; max-width: 95vw;
+  max-height: 88vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,.6);
+}
+
+.ob-progress {
+  height: 3px;
+  background: var(--border);
+}
+.ob-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  transition: width .4s ease;
+}
+
+.ob-body {
+  flex: 1; overflow-y: auto; padding: 32px 36px 24px;
+}
+.ob-body::-webkit-scrollbar { width: 3px; }
+.ob-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+.ob-step-label {
+  font-size: 9px; color: var(--muted); letter-spacing: .14em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+.ob-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 22px;
+  line-height: 1.2; margin-bottom: 14px;
+  color: var(--text);
+}
+.ob-title span { color: var(--accent); }
+
+.ob-desc {
+  font-size: 12px; color: var(--muted);
+  line-height: 1.8; margin-bottom: 20px;
+}
+
+.ob-visual {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.ob-stage-list { display: flex; flex-direction: column; gap: 10px; }
+.ob-stage-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 12px;
+  background: var(--card); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.ob-snum {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 10px;
+  flex-shrink: 0;
+}
+.ob-sname {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px;
+  margin-bottom: 2px;
+}
+.ob-sdesc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+.ob-sxp { font-size: 9px; color: var(--accent); margin-top: 2px; letter-spacing: .05em; }
+
+.ob-mode-list { display: flex; flex-direction: column; gap: 8px; }
+.ob-mode-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--card); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.ob-micon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.ob-mname { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+.ob-mdesc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+.ob-canvas-list { display: flex; flex-direction: column; gap: 8px; }
+.ob-canvas-row {
+  display: flex; gap: 10px; align-items: center;
+  padding: 8px 12px;
+  background: var(--card); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.ob-canvas-icon { font-size: 18px; flex-shrink: 0; }
+.ob-canvas-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; }
+.ob-canvas-desc { font-size: 10px; color: var(--muted); }
+
+.ob-memory-box {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ob-mem-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.ob-mem-icon { font-size: 18px; flex-shrink: 0; }
+.ob-mem-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; margin-bottom: 3px; }
+.ob-mem-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+.ob-highlight {
+  background: rgba(0,229,160,.08);
+  border: 1px solid rgba(0,229,160,.2);
+  border-radius: 8px; padding: 12px 16px;
+  margin-top: 14px; font-size: 11px; color: var(--text); line-height: 1.7;
+}
+.ob-highlight strong { color: var(--accent); }
+
+.ob-footer {
+  padding: 16px 36px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border);
+}
+.ob-dots { display: flex; gap: 6px; }
+.ob-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border); transition: all .2s;
+}
+.ob-dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+.ob-dot.done { background: var(--accent); opacity: .4; }
+
+.ob-btns { display: flex; gap: 8px; }
+.ob-btn-skip {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  cursor: pointer; transition: all .15s;
+}
+.ob-btn-skip:hover { color: var(--text); border-color: var(--text); }
+.ob-btn-next {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: var(--accent); color: var(--bg);
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px;
+  cursor: pointer; transition: all .15s;
+}
+.ob-btn-next:hover { background: #00c88a; }
+
+/* ── MEMORY PANEL in sidebar ── */
+.mem-section {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+}
+.mem-title {
+  font-size: 9px; letter-spacing: .14em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mem-clear-btn {
+  font-size: 9px; color: var(--danger); background: none; border: none;
+  cursor: pointer; font-family: 'JetBrains Mono', monospace;
+}
+.mem-item {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 6px 8px; border-radius: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  margin-bottom: 5px; font-size: 10px;
+}
+.mem-item-icon { flex-shrink: 0; font-size: 11px; }
+.mem-item-text { color: var(--muted); line-height: 1.4; }
+.mem-item-text strong { color: var(--text); }
+.mem-empty { font-size: 10px; color: var(--muted); font-style: italic; text-align: center; padding: 8px; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--accent); color: var(--bg);
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px;
+  padding: 8px 20px; border-radius: 24px; opacity: 0;
+  transition: all .35s; z-index: 1000; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── API KEY MODAL ── */
+.key-overlay {
+  position: fixed; inset: 0; z-index: 950;
+  background: rgba(10,10,15,.9);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(5px);
+}
+.key-overlay.hidden { display: none; }
+.key-modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; width: 440px; max-width: 95vw;
+  box-shadow: 0 28px 56px rgba(0,0,0,.6);
+  animation: slideUp .2s ease;
+}
+.key-modal-header {
+  padding: 20px 22px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.key-modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; }
+.key-modal-title span { color: var(--accent); }
+.key-modal-body { padding: 20px 22px; }
+.key-desc {
+  font-size: 11px; color: var(--muted); line-height: 1.7; margin-bottom: 16px;
+}
+.key-input-wrap {
+  position: relative; margin-bottom: 12px;
+}
+.key-input {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 40px 10px 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text);
+  outline: none; transition: border-color .2s; letter-spacing: .04em;
+}
+.key-input:focus { border-color: var(--accent); }
+.key-input::placeholder { color: var(--muted); letter-spacing: 0; }
+.key-toggle-vis {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; padding: 2px 4px; transition: color .15s;
+}
+.key-toggle-vis:hover { color: var(--text); }
+.key-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; margin-bottom: 14px; min-height: 18px;
+}
+.key-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.key-note {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 13px;
+  font-size: 10px; color: var(--muted); line-height: 1.6;
+}
+.key-note a { color: var(--accent2); text-decoration: none; }
+.key-note a:hover { text-decoration: underline; }
+.key-modal-footer {
+  padding: 12px 22px 18px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.key-clear-btn {
+  font-size: 10px; color: var(--danger); background: none; border: none;
+  cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: opacity .15s;
+}
+.key-clear-btn:hover { opacity: .7; }
+.key-save-btn {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: var(--accent); color: var(--bg);
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px;
+  cursor: pointer; transition: all .15s;
+}
+.key-save-btn:hover { background: #00c88a; }
+/* key indicator in header */
+.key-indicator {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--border); cursor: pointer;
+  font-size: 10px; color: var(--muted); transition: all .15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.key-indicator:hover { border-color: var(--accent); color: var(--accent); }
+.key-indicator .kdot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ── API KEY MODAL ── */
+.trail-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(10,10,15,.88);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.trail-overlay.hidden { display: none; }
+.trail-modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; width: 520px; max-width: 95vw; max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 32px 64px rgba(0,0,0,.6);
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+.trail-modal-header {
+  padding: 22px 26px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.trail-modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; }
+.trail-modal-title span { color: var(--accent); }
+.trail-close-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.trail-close-btn:hover { color: var(--text); border-color: var(--text); }
+.trail-modal-body { padding: 20px 26px; overflow-y: auto; flex: 1; }
+.trail-modal-body::-webkit-scrollbar { width: 3px; }
+.trail-modal-body::-webkit-scrollbar-thumb { background: var(--border); }
+.trail-section-label {
+  font-size: 9px; letter-spacing: .14em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.trail-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.trail-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; cursor: pointer;
+  transition: all .2s; display: flex; gap: 14px; align-items: flex-start;
+  position: relative;
+}
+.trail-card:hover { border-color: var(--accent); background: rgba(0,229,160,.04); }
+.trail-card.selected { border-color: var(--accent); background: rgba(0,229,160,.07); }
+.trail-card.selected::after {
+  content: '✓'; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); color: var(--accent); font-size: 14px; font-weight: 700;
+}
+.trail-card-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.trail-card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.trail-card.selected .trail-card-name { color: var(--accent); }
+.trail-card-desc { font-size: 10px; color: var(--muted); line-height: 1.55; }
+.trail-card-stages { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+.trail-stage-chip {
+  padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600;
+  background: var(--card); border: 1px solid var(--border); color: var(--muted);
+}
+.trail-warning {
+  background: rgba(255,214,10,.07); border: 1px solid rgba(255,214,10,.2);
+  border-radius: 8px; padding: 11px 14px; font-size: 11px; color: var(--muted);
+  line-height: 1.6; margin-bottom: 16px; display: flex; gap: 10px;
+}
+.trail-modal-footer {
+  padding: 14px 26px 20px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.trail-cancel-btn {
+  padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: all .15s;
+}
+.trail-cancel-btn:hover { color: var(--text); border-color: var(--text); }
+.trail-confirm-btn {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: var(--accent); color: var(--bg);
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; transition: all .15s;
+}
+.trail-confirm-btn:hover { background: #00c88a; }
+.trail-switch-btn {
+  width: 100%; padding: 8px 12px; background: transparent;
+  border: 1px dashed var(--border); border-radius: 8px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; cursor: pointer;
+  transition: all .2s; text-align: left; display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+}
+.trail-switch-btn:hover { border-color: var(--accent); color: var(--accent); border-style: solid; }
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="key-overlay hidden" id="keyOverlay">
+  <div class="key-modal">
+    <div class="key-modal-header">
+      <div class="key-modal-title">API <span>Key</span></div>
+      <button class="trail-close-btn" onclick="closeKeyModal()">✕</button>
+    </div>
+    <div class="key-modal-body">
+      <div class="key-desc">
+        Configure sua chave da API Anthropic para usar o agente em qualquer navegador ou compartilhar com outras pessoas.
+      </div>
+      <div class="key-input-wrap">
+        <input class="key-input" id="keyInput" type="password"
+          placeholder="sk-ant-api03-..." autocomplete="off"
+          oninput="onKeyInput()" />
+        <button class="key-toggle-vis" onclick="toggleKeyVis()" id="keyVisBtn">👁</button>
+      </div>
+      <div class="key-status" id="keyStatus"></div>
+      <div class="key-note">
+        🔒 A chave é salva <strong style="color:var(--text)">apenas no seu navegador</strong> (localStorage). Nunca é enviada para nenhum servidor além da API da Anthropic.<br><br>
+        Obtenha sua chave em <a href="https://console.anthropic.com/account/keys" target="_blank">console.anthropic.com/account/keys</a>
+      </div>
+    </div>
+    <div class="key-modal-footer">
+      <button class="key-clear-btn" onclick="clearApiKey()">Remover chave</button>
+      <button class="key-save-btn" onclick="saveApiKey()">Salvar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRAIL SWITCHER MODAL -->
+<div class="trail-overlay hidden" id="trailOverlay">
+  <div class="trail-modal">
+    <div class="trail-modal-header">
+      <div class="trail-modal-title">Mudar <span>trilha</span></div>
+      <button class="trail-close-btn" onclick="closeTrailModal()">✕</button>
+    </div>
+    <div class="trail-modal-body">
+      <div class="trail-section-label">Escolha sua trilha de desenvolvimento</div>
+      <div class="trail-list" id="trailList"></div>
+      <div class="trail-warning">
+        <span>⚠️</span>
+        <span>Mudar de trilha <strong style="color:var(--text)">não apaga seu XP</strong>. Os estágios desbloqueados permanecem. A conversa atual será reiniciada com o novo contexto.</span>
+      </div>
+    </div>
+    <div class="trail-modal-footer">
+      <button class="trail-cancel-btn" onclick="closeTrailModal()">Cancelar</button>
+      <button class="trail-confirm-btn" onclick="confirmTrailChange()">Confirmar mudança →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING OVERLAY -->
+<div class="onboarding-overlay" id="obOverlay">
+  <div class="ob-card">
+    <div class="ob-progress"><div class="ob-progress-fill" id="obProgressFill" style="width:0%"></div></div>
+    <div class="ob-body" id="obBody"></div>
+    <div class="ob-footer">
+      <div class="ob-dots" id="obDots"></div>
+      <div class="ob-btns">
+        <button class="ob-btn-skip" onclick="skipOnboarding()">Pular tutorial</button>
+        <button class="ob-btn-next" id="obNextBtn" onclick="obNext()">Próximo →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo-dot"></div>
+  <div class="header-title">Critical Thinking Agent · Data Career</div>
+  <div class="header-right">
+    <span class="stage-badge" id="hStage">Analista Sênior</span>
+    <div class="view-toggle">
+      <button class="vtbtn active" id="vt-chat" onclick="setView('chat')">💬 Chat</button>
+      <button class="vtbtn" id="vt-split" onclick="setView('split')">⊞ Split</button>
+      <button class="vtbtn" id="vt-canvas" onclick="setView('canvas')">🗺 Canvas</button>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-scroll">
+      <div class="slabel">Trilha</div>
+      <div id="stageTrack"></div>
+      <div class="slabel" style="margin-top:14px">Modo</div>
+      <div class="mode-pills" style="padding:0;border:none" id="modePills"></div>
+      <button class="trail-switch-btn" onclick="openTrailModal()">🔀 Mudar trilha</button>
+    </div>
+    <div class="xp-box">
+      <div class="xp-row"><span>XP</span><span id="xpCount">0</span></div>
+      <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      <div class="xp-next" id="xpNext">Próximo: 40 xp</div>
+    </div>
+    <div class="mem-section">
+      <div class="mem-title">
+        <span>🧠 Memória</span>
+        <button class="mem-clear-btn" onclick="clearMemory()">limpar</button>
+      </div>
+      <div id="memList"><div class="mem-empty">Nenhum padrão registrado ainda</div></div>
+    </div>
+    <div style="padding: 8px 14px 14px; border-top: 1px solid var(--border)">
+      <button onclick="openKeyModal()" id="keyNavBtn" style="
+        width:100%; background:none; border:none; cursor:pointer;
+        display:flex; align-items:center; gap:7px;
+        padding:6px 8px; border-radius:6px;
+        font-family:'JetBrains Mono',monospace; font-size:9px;
+        color:var(--muted); transition:all .15s; text-align:left;
+      " onmouseover="this.style.background='rgba(255,255,255,.04)';this.style.color='var(--text)'"
+         onmouseout="this.style.background='none';this.style.color='var(--muted)'">
+        <div id="keyDot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all .3s"></div>
+        <span id="keyLabel">API Key não configurada</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- CHAT -->
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <div class="ch-icon" id="chIcon">🔎</div>
+      <div>
+        <div class="ch-title" id="chTitle">Analista Sênior · Guiado</div>
+        <div class="ch-desc" id="chDesc">Fundamentos de raciocínio crítico e analítico</div>
+      </div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <div class="quick-row" id="quickRow"></div>
+      <div class="input-row">
+        <textarea class="ibox" id="uInput" placeholder="Escreva sua resposta..." rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="sbtn" id="sendBtn" onclick="send()">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISUAL CANVAS -->
+  <div class="canvas-panel collapsed" id="canvasPanel">
+    <div class="canvas-header">
+      <div class="canvas-title">🗺 Canvas Visual</div>
+      <div class="canvas-toolbar">
+        <button class="ctbtn" onclick="clearCanvas()">limpar</button>
+        <button class="ctbtn" id="aiPopBtn" onclick="aiPopulateCanvas()">✦ IA preenche</button>
+      </div>
+    </div>
+    <div class="canvas-tabs" id="canvasTabs"></div>
+    <div class="canvas-body" id="canvasBody">
+      <div class="cv-placeholder">
+        <div class="big">🗺</div>
+        <p>Selecione um framework acima<br>ou peça ao agente para visualizar algo</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   DATA — STAGES
+═══════════════════════════════════════════════ */
+const STAGES = [
+  {
+    id:'analyst', num:'01', name:'Analista Sênior', icon:'🔎',
+    desc:'Clareza lógica e precisão analítica',
+    xpReq:0, xpTo:40,
+    system:`Você é mentor de pensamento crítico para analistas de dados seniores.
+O usuário é Data Analyst sênior → Data Science → meta: Head of Data.
+
+FOCO: fundamentos do raciocínio. NÃO vá para estratégia ainda.
+1. CLAREZA: vago ou preciso? Peça exemplos concretos.
+2. LÓGICA: premissas→argumento→conclusão? Aponte saltos.
+3. PREMISSAS: "isso é fato ou suposição?" "de onde vem esse número?"
+4. DECOMPOSIÇÃO: quebre problemas em partes, variáveis, dependências.
+5. CORRELAÇÃO vs CAUSALIDADE: corrija sempre que confundir.
+
+CANVAS: quando identificar oportunidade visual, inclua no fim da resposta uma linha assim:
+[CANVAS:tipo|título]
+Tipos disponíveis: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop
+
+Exemplos:
+[CANVAS:causal_chain|Cadeia causal do problema]
+[CANVAS:matrix_2x2|Impacto vs Esforço]
+
+Avalie ao final: 📊 Clareza: X/5 | Estrutura: X/5
+Máx 240 palavras.`
+  },
+  {
+    id:'ds', num:'02', name:'Data Scientist', icon:'📊',
+    desc:'Raciocínio probabilístico e decisão com incerteza',
+    xpReq:40, xpTo:80,
+    system:`Você é mentor de raciocínio científico para cientistas de dados.
+O usuário tem base analítica. Agora desenvolve raciocínio probabilístico.
+
+FOCO:
+1. INCERTEZA: combata certezas. "Qual prob de estar errado?"
+2. TRADE-OFFS: bias/variance, precisão/recall. Force o custo de cada escolha.
+3. VALIDADE: "funciona fora do período de análise?" "o que esse dado NÃO captura?"
+4. CAUSALIDADE: DAGs, confounding. Diferença real de correlação.
+5. OVERCONFIDENCE: "como você saberia se estivesse errado?"
+
+CANVAS: inclua quando útil: [CANVAS:tipo|título]
+Tipos: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop
+
+Avalie: 📊 Rigor: X/5 | Causalidade: X/5 — Máx 240 palavras.`
+  },
+  {
+    id:'lead', num:'03', name:'Analytics Lead', icon:'🎯',
+    desc:'Priorização, comunicação e influência',
+    xpReq:120, xpTo:120,
+    system:`Você é mentor de liderança técnica para Analytics Leads.
+FOCO:
+1. PRIORIZAÇÃO: critérios explícitos. "Se só pudesse entregar 1 coisa?"
+2. COMUNICAÇÃO: explique técnico como CEO. Sem jargão.
+3. INFLUÊNCIA: "como convence quem não se importa com dados?"
+4. QUALIDADE vs VELOCIDADE: quando imperfeito é a decisão certa?
+
+CANVAS: [CANVAS:tipo|título]
+Tipos: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop
+
+Avalie: 📊 Comunicação: X/5 | Priorização: X/5 — Máx 240 palavras.`
+  },
+  {
+    id:'manager', num:'04', name:'Data Manager', icon:'👥',
+    desc:'Gestão de pessoas, delegação e desenvolvimento',
+    xpReq:240, xpTo:160,
+    system:`Você é mentor de gestão para managers de dados.
+FOCO:
+1. DIAGNÓSTICO: quem está travado/motivado/em risco?
+2. DELEGAÇÃO: o que faz vs. delega? Como delegar o que você faz melhor?
+3. FEEDBACK: desenvolve sem desmotivar. Construa feedbacks reais.
+4. CULTURA: o que muda quando cultura de dados funciona de verdade?
+
+CANVAS: [CANVAS:tipo|título]
+Tipos: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop
+
+Avalie: 📊 Gestão: X/5 | Desenvolvimento: X/5 — Máx 240 palavras.`
+  },
+  {
+    id:'head', num:'05', name:'Head of Data', icon:'🏛️',
+    desc:'Estratégia, C-level e produto de dados',
+    xpReq:400, xpTo:null,
+    system:`Você é coach executivo para Heads of Data.
+FOCO:
+1. ESTRATÉGIA: alinhada ao negócio. Como priorizar infra/ciência/analytics/gov?
+2. C-LEVEL: falar diferente para CEO/CFO/CMO. Dados como argumento de orçamento.
+3. PRODUTO DE DADOS: não serviço interno. Como medir valor?
+4. RISCOS: o que pode destruir credibilidade em 6 meses?
+
+CANVAS: [CANVAS:tipo|título]
+Tipos: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop
+
+Avalie: 📊 Estratégia: X/5 | Influência: X/5 — Máx 260 palavras.`
+  }
+];
+
+const MODES = {
+  analyst:  [{id:'guided',l:'🧭 Guiado'},{id:'problem',l:'🔧 Problema'},{id:'drill',l:'⚡ Drill'}],
+  ds:       [{id:'guided',l:'🧭 Guiado'},{id:'problem',l:'🔧 Análise'},{id:'devil',l:'😈 Diabo'}],
+  lead:     [{id:'guided',l:'🧭 Guiado'},{id:'case',l:'🧩 Case'},{id:'devil',l:'😈 Stakeholder'}],
+  manager:  [{id:'guided',l:'🧭 Guiado'},{id:'case',l:'🧩 Case'},{id:'role',l:'🎭 1:1'}],
+  head:     [{id:'guided',l:'🧭 Guiado'},{id:'case',l:'🧩 Case'},{id:'devil',l:'😈 Board'},{id:'360',l:'🔄 360°'}]
+};
+
+const QUICK = {
+  analyst:  ['Exercício de lógica','Analisar um problema','Questione meu raciocínio'],
+  ds:       ['Raciocínio probabilístico','Revisar uma análise','Desafie uma conclusão'],
+  lead:     ['Preciso priorizar','Comunicar ao gestor','Conflito de stakeholder'],
+  manager:  ['Situação com time','Como delegar?','Feedback difícil'],
+  head:     ['Estratégia de dados','Convencer o CFO','Dilema de Head']
+};
+
+const INTROS = {
+  analyst:{
+    guided:`Vamos começar do lugar certo — <strong>clareza antes de estratégia</strong>.<br><br>Me descreva um problema de dados que você resolveu recentemente. Pode ser pequeno. Vou observar como você estrutura o raciocínio.`,
+    problem:`Traga um problema real que está enfrentando agora. Vou ajudar a estruturar com mais precisão.`,
+    drill:`Drill rápido.<br><br><em>Vendas caíram 20%. Usuários mobile têm ticket 40% maior. CEO quer focar 100% em mobile. O que você faz?</em>`
+  },
+  ds:{
+    guided:`Você avançou. Aqui o jogo muda — precisa pensar com <strong>incerteza</strong>.<br><br><em>Me fale sobre alguma análise ou modelo que construiu. Qual foi sua maior suposição não validada?</em>`,
+    problem:`Traga uma análise ou hipótese que está trabalhando. Vou identificar pontos cegos e suposições ocultas.`,
+    devil:`Vou contra-argumentar tudo. Comece: me diga algo que você acredita ser verdade sobre dados.`
+  },
+  lead:{
+    guided:`Você tem raciocínio técnico. O próximo gap é <strong>influenciar sem autoridade formal</strong>.<br><br><em>Me conte sobre uma decisão técnica que precisou convencer alguém que não é de dados.</em>`,
+    case:`<span style="color:var(--accent3);font-size:9px;font-weight:700;letter-spacing:.1em">CASE · ANALYTICS LEAD</span><br><br>Seu time aguenta 3 projetos. Você tem 6 pedidos: dashboard executivo urgente, modelo de churn 3 meses, limpeza de dados crítica, análise ad hoc do comercial, automação de relatório, investigação de anomalia na receita.<br><br><em>Como prioriza? O que comunica para quem ficou fora?</em>`,
+    devil:`Vou simular um stakeholder difícil. Me diga: o que você quer que eu aprove?`
+  },
+  manager:{
+    guided:`O desafio agora não é técnico — é humano.<br><br><em>Você já teve alguém sob sua responsabilidade? Me conte uma situação onde precisou desenvolver ou orientar alguém.</em>`,
+    case:`<span style="color:var(--accent3);font-size:9px;font-weight:700;letter-spacing:.1em">CASE · DATA MANAGER</span><br><br>Um analista sênior — muito bom tecnicamente — começou a perder prazos, ficou menos participativo, e você ouviu que recrutadores estão assediando ele.<br><br><em>O que você faz? Como aborda essa conversa? O que você NÃO faz?</em>`,
+    role:`Vou simular um analista em 1:1 difícil. Eu estou frustrado e considerando sair.<br><br>Você começa. Como abre essa conversa?`
+  },
+  head:{
+    guided:`A questão agora não é "como fazer" — é <strong>"o que construir e por quê"</strong>.<br><br><em>Qual é a maior decisão estratégica que sua área de dados precisa tomar nos próximos 6 meses?</em>`,
+    case:`<span style="color:var(--accent3);font-size:9px;font-weight:700;letter-spacing:.1em">CASE · HEAD OF DATA</span><br><br>CFO quer cortar 30% do orçamento citando "baixo ROI visível". Você tem 2 semanas para uma defesa executiva.<br><br><em>Como constrói esse argumento? Quais dados levanta? Como muda a narrativa?</em>`,
+    devil:`Vou simular um Board cético. Apresente sua visão: o que você quer construir e que impacto promete.`,
+    '360':`Você vai analisar uma decisão sob 6 perspectivas simultâneas.<br><br>Me apresente uma iniciativa de dados que está considerando.`
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   CANVAS DEFINITIONS
+═══════════════════════════════════════════════ */
+const CANVAS_TABS = [
+  { id:'story_spine',   label:'📖 Storytelling' },
+  { id:'matrix_2x2',   label:'⊞ Matriz' },
+  { id:'causal_chain',  label:'🔗 Causal' },
+  { id:'pyramid',       label:'△ Pirâmide' },
+  { id:'system_loop',   label:'🔄 Sistema' },
+  { id:'stakeholder_map',label:'👥 Stakeholders' },
+];
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let xp = 0, stageIdx = 0, mode = 'guided';
+let history = [];
+let activeTab = 'story_spine';
+let canvasData = {};
+let currentView = 'chat';
+let lastConversationContext = '';
+let memoryLog = [];
+let patternCounts = {};
+let totalSessions = 1;
+
+/* ═══════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════ */
+const STORAGE_KEY = 'cta_data_v2';
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ xp, stageIdx, memory: memoryLog, patterns: patternCounts, totalSessions }));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    xp = d.xp || 0; stageIdx = d.stageIdx || 0;
+    memoryLog = d.memory || []; patternCounts = d.patterns || {};
+    totalSessions = (d.totalSessions || 0) + 1;
+    return true;
+  } catch(e) { return false; }
+}
+
+/* ═══════════════════════════════════════════════
+   PATTERN TRACKING
+═══════════════════════════════════════════════ */
+const PATTERNS = [
+  { key:'vague',    trigger:/vago|imprecis|genéric|abstrat|específic/i,   icon:'🌫️', label:'Tendência à imprecisão', tip:'Pratique dar números e exemplos concretos' },
+  { key:'leap',     trigger:/salto|premissa|assumiu|supôs|sem evidência/i, icon:'⚡', label:'Saltos lógicos recorrentes', tip:'Conclusões sem base explícita' },
+  { key:'causal',   trigger:/correlação|causalidade|confund/i,             icon:'🔗', label:'Confunde correlação/causalidade', tip:'Ponto de atenção frequente' },
+  { key:'biz',      trigger:/negócio|impacto|ROI|valor|receita/i,          icon:'💼', label:'Conecta bem ao negócio', tip:'Ponto forte identificado' },
+  { key:'struct',   trigger:/estrutur|organiz|framework|método/i,          icon:'🏗️', label:'Boa estrutura de raciocínio', tip:'Continue desenvolvendo' },
+  { key:'overconf', trigger:/certeza|sempre|nunca|óbvio|claro que/i,       icon:'⚠️', label:'Overconfidence detectada', tip:'Questione suas certezas' },
+];
+
+function detectPatterns(userText, agentReply) {
+  const combined = userText + ' ' + agentReply;
+  const found = [];
+  PATTERNS.forEach(p => {
+    if (p.trigger.test(combined)) {
+      patternCounts[p.key] = (patternCounts[p.key] || 0) + 1;
+      if (patternCounts[p.key] >= 2) found.push(p);
+    }
+  });
+  return found;
+}
+
+function addMemory(icon, text) {
+  memoryLog.unshift({ icon, text, stage: STAGES[stageIdx].name, ts: Date.now() });
+  if (memoryLog.length > 12) memoryLog.pop();
+  renderMemory(); saveState();
+}
+
+function renderMemory() {
+  const el = document.getElementById('memList');
+  if (!memoryLog.length) { el.innerHTML = '<div class="mem-empty">Nenhum padrão registrado ainda</div>'; return; }
+  el.innerHTML = memoryLog.slice(0,5).map(m =>
+    `<div class="mem-item"><div class="mem-item-icon">${m.icon}</div>
+     <div class="mem-item-text"><strong>${m.stage}</strong><br>${m.text}</div></div>`).join('');
+}
+
+function clearMemory() {
+  memoryLog = []; patternCounts = {};
+  renderMemory(); saveState(); showToast('Memória limpa');
+}
+
+/* ═══════════════════════════════════════════════
+   API KEY MANAGEMENT
+═══════════════════════════════════════════════ */
+const KEY_STORAGE = 'cta_apikey';
+let userApiKey = '';
+
+function loadApiKey() {
+  try { userApiKey = localStorage.getItem(KEY_STORAGE) || ''; } catch(e) {}
+  updateKeyIndicator();
+}
+
+function updateKeyIndicator() {
+  const dot = document.getElementById('keyDot');
+  const label = document.getElementById('keyLabel');
+  if (!dot || !label) return;
+  if (userApiKey) {
+    dot.style.background = 'var(--accent)';
+    dot.style.boxShadow = '0 0 6px var(--accent)';
+    label.textContent = 'sk-···' + userApiKey.slice(-4);
+  } else {
+    dot.style.background = 'var(--warn)';
+    dot.style.boxShadow = 'none';
+    label.textContent = 'Config. Key';
+  }
+}
+
+function getApiHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userApiKey) {
+    headers['x-api-key'] = userApiKey;
+    headers['anthropic-version'] = '2023-06-01';
+  } else {
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+  return headers;
+}
+
+function openKeyModal() {
+  const inp = document.getElementById('keyInput');
+  inp.value = userApiKey;
+  inp.type = 'password';
+  document.getElementById('keyVisBtn').textContent = '👁';
+  updateKeyStatus();
+  document.getElementById('keyOverlay').classList.remove('hidden');
+}
+
+function closeKeyModal() {
+  document.getElementById('keyOverlay').classList.add('hidden');
+}
+
+function toggleKeyVis() {
+  const inp = document.getElementById('keyInput');
+  const btn = document.getElementById('keyVisBtn');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function onKeyInput() { updateKeyStatus(); }
+
+function updateKeyStatus() {
+  const val = document.getElementById('keyInput').value.trim();
+  const el = document.getElementById('keyStatus');
+  if (!val) {
+    el.innerHTML = `<div class="key-status-dot" style="background:var(--muted)"></div><span style="color:var(--muted)">Sem chave configurada — usa o ambiente Claude.ai</span>`;
+  } else if (val.startsWith('sk-ant-')) {
+    el.innerHTML = `<div class="key-status-dot" style="background:var(--accent);box-shadow:0 0 5px var(--accent)"></div><span style="color:var(--accent)">Chave válida detectada ✓</span>`;
+  } else {
+    el.innerHTML = `<div class="key-status-dot" style="background:var(--warn)"></div><span style="color:var(--warn)">Formato incomum — verifique se começa com sk-ant-</span>`;
+  }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('keyInput').value.trim();
+  userApiKey = val;
+  try { localStorage.setItem(KEY_STORAGE, val); } catch(e) {}
+  updateKeyIndicator();
+  closeKeyModal();
+  showToast(val ? '🔑 Chave salva!' : 'Chave removida');
+}
+
+function clearApiKey() {
+  document.getElementById('keyInput').value = '';
+  userApiKey = '';
+  try { localStorage.removeItem(KEY_STORAGE); } catch(e) {}
+  updateKeyIndicator();
+  updateKeyStatus();
+  closeKeyModal();
+  showToast('Chave removida');
+}
+
+
+const TRAILS = [
+  {
+    id: 'data',
+    icon: '📊',
+    name: 'Data Career',
+    desc: 'Trilha padrão. Desenvolvida especificamente para a jornada Analytics → Data Science → Head of Data. Cobre raciocínio analítico, científico, liderança técnica, gestão e estratégia de dados.',
+    stages: ['Analista Sênior','Data Scientist','Analytics Lead','Data Manager','Head of Data'],
+    stageColors: ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','var(--danger)'],
+    stageOverrides: null // uses default STAGES
+  },
+  {
+    id: 'product',
+    icon: '🚀',
+    name: 'Product & Strategy',
+    desc: 'Para quem quer desenvolver raciocínio de produto e estratégia de negócio. Foco em descoberta de problemas, priorização de produto, métricas de sucesso e visão de mercado.',
+    stages: ['Pensamento de Usuário','Métricas & Dados','Product Manager','Head of Product','CPO / Estratégia'],
+    stageColors: ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','var(--danger)'],
+    systemOverride: {
+      analyst: `Você é mentor de pensamento crítico com foco em produto e usuário.
+Desenvolva: empatia com usuário, separação de sintoma vs. causa raiz, validação de hipóteses.
+Questione: "isso é o que o usuário disse ou o que ele fez?", "qual evidência temos?", "o que estamos assumindo?"
+Avalie ao final: 📊 Empatia: X/5 | Rigor: X/5 — Máx 240 palavras.`,
+      ds: `Você é mentor de métricas e dados para product managers.
+Foco: definir métricas certas, north star metric, guardrails, armadilhas de métricas.
+Questione: "essa métrica pode ser gamificada?", "o que ela NÃO captura?", "qual o lagging indicator disso?"
+Avalie: 📊 Escolha de métrica: X/5 | Rigor: X/5 — Máx 240 palavras.`,
+      lead: `Você é mentor de product management para PMs em crescimento.
+Foco: priorização (RICE, ICE, Jobs-to-be-done), comunicação de roadmap, influência sem autoridade.
+Questione: "por que isso antes daquilo?", "o que você está sacrificando?", "como o cliente descreveria esse problema?"
+Avalie: 📊 Priorização: X/5 | Comunicação: X/5 — Máx 240 palavras.`,
+      manager: `Você é mentor de liderança de produto para Head of Product.
+Foco: estratégia de produto, alinhamento com negócio, construção de time de produto.
+Questione: "qual é a teoria de produto aqui?", "onde está a aposta?", "o que você não está construindo e por quê?"
+Avalie: 📊 Estratégia: X/5 | Liderança: X/5 — Máx 240 palavras.`,
+      head: `Você é coach executivo para CPOs e líderes de estratégia.
+Foco: visão de longo prazo, portfólio de apostas, build/buy/partner, narrativa para board.
+Avalie: 📊 Visão: X/5 | Estratégia: X/5 — Máx 260 palavras.`
+    }
+  },
+  {
+    id: 'engineering',
+    icon: '⚙️',
+    name: 'Engineering Leadership',
+    desc: 'Para engenheiros e tech leads em transição para liderança técnica. Cobre arquitetura de decisões, dívida técnica, gestão de engenharia e visão de CTO.',
+    stages: ['Eng. Sênior','Tech Lead','Engineering Manager','VP Engineering','CTO'],
+    stageColors: ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','var(--danger)'],
+    systemOverride: {
+      analyst: `Você é mentor de pensamento crítico para engenheiros seniores.
+Foco: trade-offs técnicos, clareza de requisitos, separação de problema vs. solução.
+Questione: "isso é um requisito ou uma solução escolhida?", "qual o custo de estar errado?", "o que está sendo assumido?"
+Avalie ao final: 📊 Clareza técnica: X/5 | Trade-offs: X/5 — Máx 240 palavras.`,
+      ds: `Você é mentor de decisões de arquitetura e sistemas para tech leads.
+Foco: dívida técnica, escalabilidade, decisões de build vs. buy, documentação de ADRs.
+Questione: "esse problema existe agora ou você está antecipando?", "qual o custo de reverter essa decisão?"
+Avalie: 📊 Arquitetura: X/5 | Pensamento sistêmico: X/5 — Máx 240 palavras.`,
+      lead: `Você é mentor de engineering management.
+Foco: velocidade de entrega vs. qualidade, gestão de roadmap técnico, comunicação com produto e negócio.
+Questione: "o que está bloqueando o time?", "como você mede saúde técnica?", "o que você delegaria amanhã?"
+Avalie: 📊 Gestão técnica: X/5 | Comunicação: X/5 — Máx 240 palavras.`,
+      manager: `Você é mentor de VP Engineering e líderes de engenharia.
+Foco: org design, contratação, cultura de engenharia, métricas de engineering excellence.
+Avalie: 📊 Liderança: X/5 | Visão organizacional: X/5 — Máx 240 palavras.`,
+      head: `Você é coach executivo para CTOs.
+Foco: tecnologia como vantagem competitiva, plataforma vs. produto, make vs. buy estratégico, narrativa para board.
+Avalie: 📊 Visão técnica: X/5 | Estratégia: X/5 — Máx 260 palavras.`
+    }
+  },
+  {
+    id: 'business',
+    icon: '💼',
+    name: 'Business & Leadership',
+    desc: 'Trilha generalista de liderança empresarial. Desenvolve raciocínio financeiro, tomada de decisão sob incerteza, comunicação executiva e visão de CEO.',
+    stages: ['Analista de Negócio','Consultor','Business Manager','Diretor','C-Level'],
+    stageColors: ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','var(--danger)'],
+    systemOverride: {
+      analyst: `Você é mentor de pensamento crítico para analistas de negócio.
+Foco: estruturação de problemas, separação de sintoma vs. causa, raciocínio financeiro básico.
+Questione: "qual é o problema real?", "quem se beneficia com essa visão?", "quais são as premissas ocultas?"
+Avalie ao final: 📊 Estruturação: X/5 | Raciocínio: X/5 — Máx 240 palavras.`,
+      ds: `Você é mentor de consultoria e análise estratégica.
+Foco: frameworks MECE, issue trees, hipóteses vs. análises, comunicação de insights.
+Questione: "sua estrutura é MECE?", "qual hipótese você está testando?", "o que isso implica para a decisão?"
+Avalie: 📊 Estrutura: X/5 | Insight: X/5 — Máx 240 palavras.`,
+      lead: `Você é mentor de business management.
+Foco: P&L básico, priorização estratégica, gestão de stakeholders, influência organizacional.
+Avalie: 📊 Visão de negócio: X/5 | Influência: X/5 — Máx 240 palavras.`,
+      manager: `Você é mentor de diretores e líderes seniores.
+Foco: alocação de recursos, construção de times, cultura organizacional, navegação política.
+Avalie: 📊 Liderança: X/5 | Visão estratégica: X/5 — Máx 240 palavras.`,
+      head: `Você é coach executivo para C-Level.
+Foco: estratégia corporativa, criação de valor, governança, narrativa para investidores.
+Avalie: 📊 Estratégia: X/5 | Liderança: X/5 — Máx 260 palavras.`
+    }
+  }
+];
+
+let currentTrailId = 'data';
+let pendingTrailId = 'data';
+
+function getActiveTrail() {
+  return TRAILS.find(t => t.id === currentTrailId) || TRAILS[0];
+}
+
+function getSystemForStage(stageId) {
+  const trail = getActiveTrail();
+  if (trail.systemOverride && trail.systemOverride[stageId]) {
+    return trail.systemOverride[stageId] + `\n\nCANVAS: quando identificar oportunidade visual, inclua: [CANVAS:tipo|título]\nTipos: story_spine, matrix_2x2, causal_chain, pyramid, stakeholder_map, system_loop`;
+  }
+  return STAGES.find(s => s.id === stageId)?.system || '';
+}
+
+/* ─── TRAIL MODAL ─── */
+function openTrailModal() {
+  pendingTrailId = currentTrailId;
+  renderTrailList();
+  document.getElementById('trailOverlay').classList.remove('hidden');
+}
+
+function closeTrailModal() {
+  document.getElementById('trailOverlay').classList.add('hidden');
+}
+
+function renderTrailList() {
+  const el = document.getElementById('trailList');
+  el.innerHTML = TRAILS.map(t => `
+    <div class="trail-card${t.id === pendingTrailId ? ' selected' : ''}" onclick="selectTrail('${t.id}')">
+      <div class="trail-card-icon">${t.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="trail-card-name">${t.name}</div>
+        <div class="trail-card-desc">${t.desc}</div>
+        <div class="trail-card-stages">
+          ${t.stages.map((s,i) => `<span class="trail-stage-chip" style="color:${t.stageColors[i]};border-color:${t.stageColors[i]}40">${s}</span>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function selectTrail(id) {
+  pendingTrailId = id;
+  renderTrailList();
+}
+
+function confirmTrailChange() {
+  if (pendingTrailId === currentTrailId) { closeTrailModal(); return; }
+  currentTrailId = pendingTrailId;
+  history = [];
+  mode = 'guided';
+  const trail = getActiveTrail();
+  // save trail preference
+  try { localStorage.setItem('cta_trail', currentTrailId); } catch(e) {}
+  closeTrailModal();
+  document.getElementById('messages').innerHTML = '';
+  updateHeader();
+  renderTrack();
+  renderPills();
+  renderQuick();
+  startConvo();
+  addMemory('🔀', `Trilha alterada para: ${trail.name}`);
+  showToast(`Trilha: ${trail.icon} ${trail.name}`);
+}
+
+function loadTrailPreference() {
+  try {
+    const saved = localStorage.getItem('cta_trail');
+    if (saved && TRAILS.find(t => t.id === saved)) currentTrailId = saved;
+  } catch(e) {}
+}
+
+
+let obStep = 0;
+const OB_STEPS = [
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 1 de 6 · Visão geral</div>
+      <div class="ob-title">Seu agente de<br><span>pensamento crítico</span></div>
+      <div class="ob-desc">
+        Criado para sua jornada específica: <strong style="color:var(--text)">Data Analytics → Data Science → Head of Data</strong>.<br><br>
+        Ele não responde suas perguntas — <strong style="color:var(--accent)">força você a pensar melhor</strong>. Um Head of Data não é contratado por saber respostas, mas por fazer as perguntas certas.
+      </div>
+      <div class="ob-highlight">
+        <strong>Por que não pular direto para o nível Head?</strong><br>
+        O raciocínio estratégico é construído sobre clareza lógica → rigor científico → capacidade de influência → gestão de pessoas. Pular etapas cria lacunas que aparecem nas horas erradas.
+      </div>`
+  },
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 2 de 6 · Trilha</div>
+      <div class="ob-title">5 estágios,<br><span>progressão real</span></div>
+      <div class="ob-desc">Cada estágio é desbloqueado pelo XP que você ganha. O agente avalia a qualidade do seu raciocínio em cada resposta e pontua automaticamente.</div>
+      <div class="ob-visual">
+        <div class="ob-stage-list">
+          ${[
+            {num:'01',icon:'🔎',name:'Analista Sênior',desc:'Clareza, lógica, estrutura de argumentos. O alicerce de tudo.',color:'var(--accent)',xp:'Disponível agora'},
+            {num:'02',icon:'📊',name:'Data Scientist',desc:'Raciocínio com incerteza, trade-offs analíticos, causalidade vs. correlação.',color:'var(--accent2)',xp:'Desbloqueado com 40 xp'},
+            {num:'03',icon:'🎯',name:'Analytics Lead',desc:'Priorização, comunicação executiva, influência sem autoridade formal.',color:'var(--warn)',xp:'Desbloqueado com 120 xp'},
+            {num:'04',icon:'👥',name:'Data Manager',desc:'Gestão de pessoas, delegação, feedback e desenvolvimento de time.',color:'var(--accent3)',xp:'Desbloqueado com 240 xp'},
+            {num:'05',icon:'🏛️',name:'Head of Data',desc:'Estratégia de dados, C-level, produto de dados, visão organizacional.',color:'var(--danger)',xp:'Desbloqueado com 400 xp'},
+          ].map(s=>`<div class="ob-stage-row">
+            <div class="ob-snum" style="background:${s.color}20;color:${s.color}">${s.num}</div>
+            <div><div class="ob-sname">${s.icon} ${s.name}</div><div class="ob-sdesc">${s.desc}</div><div class="ob-sxp">${s.xp}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+  },
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 3 de 6 · Modos</div>
+      <div class="ob-title">Cada estágio tem<br><span>múltiplos modos</span></div>
+      <div class="ob-desc">Dentro de cada estágio, você escolhe como quer ser desafiado. Os modos disponíveis mudam conforme você avança na trilha.</div>
+      <div class="ob-visual">
+        <div class="ob-mode-list">
+          ${[
+            {icon:'🧭',name:'Guiado',desc:'O agente conduz com perguntas progressivas. Começa sempre aqui — ele identifica seus gaps antes de aprofundar.'},
+            {icon:'🔧',name:'Problema Real',desc:'Você traz um desafio do trabalho atual. O agente ajuda a estruturar o raciocínio sem resolver por você.'},
+            {icon:'⚡',name:'Drill',desc:'Exercícios rápidos e diretos. Bom para aquecer ou testar conceitos específicos.'},
+            {icon:'😈',name:'Advogado do Diabo',desc:'O agente contra-argumenta tudo com força máxima. Deixa seu raciocínio antifrágil.'},
+            {icon:'🧩',name:'Case',desc:'Cenários realistas com dilemas sem resposta óbvia. Avalia estrutura, negócio e risco.'},
+            {icon:'🎭',name:'Role-play',desc:'Simulação de conversas difíceis — 1:1 com liderado, apresentação para Board, negociação com CFO.'},
+          ].map(m=>`<div class="ob-mode-row">
+            <div class="ob-micon">${m.icon}</div>
+            <div><div class="ob-mname">${m.name}</div><div class="ob-mdesc">${m.desc}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+  },
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 4 de 6 · Canvas Visual</div>
+      <div class="ob-title">Pense visualmente,<br><span>não só em texto</span></div>
+      <div class="ob-desc">O Canvas aparece no painel lateral (botão <strong style="color:var(--text)">⊞ Split</strong> no topo). O agente sugere automaticamente quando um framework faz sentido — e a IA preenche com o contexto da conversa.</div>
+      <div class="ob-visual">
+        <div class="ob-canvas-list">
+          ${[
+            {icon:'📖',name:'Storytelling',desc:'Contexto → Conflito → Pergunta → Insight → So What → Ação. Para comunicar dados com impacto.'},
+            {icon:'⊞',name:'Matriz Impacto × Esforço',desc:'4 quadrantes para priorizar iniciativas. Framework mais usado em decisões de liderança.'},
+            {icon:'🔗',name:'Cadeia Causal',desc:'Mapa de causa-efeito em nós. Para pensar sistemicamente sobre problemas.'},
+            {icon:'△',name:'Pirâmide Estratégica',desc:'Propósito → Estratégia → Iniciativas → Projetos → Tarefas.'},
+            {icon:'🔄',name:'Mapa de Sistema',desc:'Loop causal com relações entre variáveis. Para identificar alavancas e efeitos colaterais.'},
+            {icon:'👥',name:'Stakeholders',desc:'Mapa Poder × Interesse. Para entender quem gerenciar de perto, quem manter informado.'},
+          ].map(c=>`<div class="ob-canvas-row">
+            <div class="ob-canvas-icon">${c.icon}</div>
+            <div><div class="ob-canvas-name">${c.name}</div><div class="ob-canvas-desc">${c.desc}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+  },
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 5 de 6 · Memória</div>
+      <div class="ob-title">O agente <span>lembra</span><br>seus padrões</div>
+      <div class="ob-desc">Diferente de uma conversa comum, este agente rastreia seus padrões de raciocínio entre sessões. Seu progresso é salvo automaticamente no navegador.</div>
+      <div class="ob-visual">
+        <div class="ob-memory-box">
+          ${[
+            {icon:'💾',color:'rgba(0,229,160,.1)',border:'rgba(0,229,160,.2)',title:'XP persistente',desc:'Seu XP e estágio atual são salvos. Fechar o navegador não apaga seu progresso.'},
+            {icon:'🧠',color:'rgba(124,92,252,.1)',border:'rgba(124,92,252,.2)',title:'Rastreio de padrões',desc:'O agente identifica padrões recorrentes no seu raciocínio — pontos fortes e gaps que se repetem.'},
+            {icon:'⚠️',color:'rgba(255,107,53,.1)',border:'rgba(255,107,53,.2)',title:'Alertas de erros frequentes',desc:'Se você comete o mesmo tipo de erro 2+ vezes, ele aparece na seção Memória na sidebar.'},
+            {icon:'🔄',color:'rgba(255,214,10,.1)',border:'rgba(255,214,10,.2)',title:'Contexto entre sessões',desc:'Os padrões identificados ficam registrados para você acompanhar sua evolução.'},
+          ].map(m=>`<div class="ob-mem-row" style="background:${m.color};border:1px solid ${m.border}">
+            <div class="ob-mem-icon">${m.icon}</div>
+            <div><div class="ob-mem-title">${m.title}</div><div class="ob-mem-desc">${m.desc}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`
+  },
+  {
+    render: () => `
+      <div class="ob-step-label">Passo 6 de 6 · Começar</div>
+      <div class="ob-title">Uma dica antes<br>de <span>começar</span></div>
+      <div class="ob-desc">O erro mais comum é querer impressionar com respostas elaboradas. <strong style="color:var(--accent)">Não faça isso.</strong><br><br>Seja honesto sobre o que você sabe e o que não sabe. O agente trabalha melhor com respostas reais.</div>
+      <div class="ob-visual">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="padding:10px 14px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:8px">
+            <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px">✓ Faça isso</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">Traga problemas reais do trabalho. Admita quando não sabe. Responda antes de pedir explicações.</div>
+          </div>
+          <div style="padding:10px 14px;background:rgba(255,71,87,.06);border:1px solid rgba(255,71,87,.2);border-radius:8px">
+            <div style="font-size:10px;color:var(--danger);font-weight:700;margin-bottom:4px">✗ Evite isso</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">Respostas genéricas e vagas. Pular etapas antes de consolidar. Pedir dicas sem se expor ao questionamento.</div>
+          </div>
+        </div>
+      </div>
+      <div class="ob-highlight">
+        <strong>Você começa no estágio 01 · Analista Sênior.</strong> Use o modo Guiado — o agente vai identificar seus gaps antes de aprofundar.
+      </div>`
+  }
+];
+
+function renderOBStep() {
+  document.getElementById('obBody').innerHTML = OB_STEPS[obStep].render();
+  document.getElementById('obProgressFill').style.width = ((obStep+1)/OB_STEPS.length*100)+'%';
+  document.getElementById('obDots').innerHTML = OB_STEPS.map((_,i)=>`<div class="ob-dot${i===obStep?' active':i<obStep?' done':''}"></div>`).join('');
+  document.getElementById('obNextBtn').textContent = obStep===OB_STEPS.length-1 ? '🚀 Começar' : 'Próximo →';
+}
+
+function obNext() {
+  if (obStep < OB_STEPS.length-1) { obStep++; renderOBStep(); }
+  else skipOnboarding();
+}
+
+function skipOnboarding() {
+  document.getElementById('obOverlay').classList.add('hidden');
+  try { localStorage.setItem('cta_ob_done','1'); } catch(e) {}
+}
+
+function shouldShowOnboarding() {
+  try { return !localStorage.getItem('cta_ob_done'); } catch(e) { return true; }
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+function init() {
+  loadTrailPreference();
+  loadApiKey();
+  const returning = loadState();
+  renderTrack(); renderPills(); renderQuick();
+  updateHeader(); updateXP(); renderMemory();
+  renderCanvasTabs(); renderCanvas(activeTab);
+
+  if (shouldShowOnboarding()) {
+    renderOBStep();
+  } else {
+    document.getElementById('obOverlay').classList.add('hidden');
+    if (returning && xp > 0) {
+      startConvo();
+      setTimeout(() => {
+        addMemory('👋', `Sessão ${totalSessions} iniciada · ${xp} xp acumulados`);
+        showToast(`Bem-vindo de volta · ${xp} xp`);
+      }, 400);
+    } else {
+      startConvo();
+    }
+  }
+  saveState();
+}
+
+/* ─── STAGE TRACK ─── */
+function renderTrack() {
+  const el = document.getElementById('stageTrack');
+  el.innerHTML = '';
+  STAGES.forEach((s,i) => {
+    const unlocked = xp >= s.xpReq;
+    const active = i === stageIdx, completed = i < stageIdx;
+    const div = document.createElement('div');
+    div.className = 'stage-item' + (!unlocked?' locked':active?' active':completed?' completed':'');
+    div.innerHTML = `<div class="snum">${completed?'✓':s.num}</div>
+      <div><div class="sname">${s.icon} ${s.name}</div><div class="sdesc">${s.desc}</div></div>`;
+    if (unlocked && !active) div.onclick = () => switchStage(i);
+    el.appendChild(div);
+  });
+}
+
+function renderPills() {
+  const el = document.getElementById('modePills');
+  el.innerHTML = '';
+  (MODES[STAGES[stageIdx].id]||[]).forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'pill'+(m.id===mode?' active':'');
+    b.textContent = m.l;
+    b.onclick = () => switchMode(m.id);
+    el.appendChild(b);
+  });
+}
+
+function renderQuick() {
+  const el = document.getElementById('quickRow');
+  el.innerHTML = '';
+  (QUICK[STAGES[stageIdx].id]||[]).forEach(q => {
+    const b = document.createElement('button');
+    b.className = 'qbtn'; b.textContent = '→ '+q;
+    b.onclick = () => { document.getElementById('uInput').value = q; send(); };
+    el.appendChild(b);
+  });
+}
+
+function updateHeader() {
+  const s = STAGES[stageIdx];
+  const trail = getActiveTrail();
+  const ml = (MODES[s.id]||[]).find(m2=>m2.id===mode)||{};
+  const stageName = trail.stages ? trail.stages[stageIdx] : s.name;
+  document.getElementById('hStage').textContent = trail.icon + ' ' + stageName;
+  document.getElementById('chIcon').textContent = s.icon;
+  document.getElementById('chTitle').textContent = stageName + (ml.l?' · '+ml.l:'');
+  document.getElementById('chDesc').textContent = trail.name + ' · ' + s.desc;
+}
+
+function updateXP() {
+  const s = STAGES[stageIdx], next = STAGES[stageIdx+1];
+  const inS = xp - s.xpReq, needed = s.xpTo;
+  const pct = needed ? Math.min(100,(inS/needed)*100) : 100;
+  document.getElementById('xpFill').style.width = pct+'%';
+  document.getElementById('xpCount').textContent = xp+' xp';
+  document.getElementById('xpNext').textContent = next
+    ? `Próximo: ${next.name} em ${Math.max(0,next.xpReq-xp)} xp`
+    : '🏛️ Nível máximo';
+}
+
+function gainXP(n) {
+  const prev = STAGES.map(s=>xp>=s.xpReq);
+  xp += n;
+  STAGES.forEach((s,i)=>{ if(xp>=s.xpReq && !prev[i] && i>0) { showToast('🔓 '+s.name+' desbloqueado!'); addMemory('🔓','Desbloqueou: '+s.name); } });
+  updateXP(); renderTrack(); saveState();
+}
+
+function switchStage(i) {
+  stageIdx = i; mode = 'guided'; history = [];
+  renderTrack(); renderPills(); renderQuick(); updateHeader();
+  document.getElementById('messages').innerHTML = '';
+  startConvo();
+}
+
+function switchMode(m2) {
+  mode = m2; history = [];
+  renderPills(); updateHeader();
+  document.getElementById('messages').innerHTML = '';
+  startConvo();
+}
+
+/* ─── VIEW TOGGLE ─── */
+function setView(v) {
+  currentView = v;
+  ['chat','split','canvas'].forEach(x => {
+    document.getElementById('vt-'+x).classList.toggle('active', x===v);
+  });
+  const chat = document.getElementById('chatPanel');
+  const canvas = document.getElementById('canvasPanel');
+  if (v==='chat')   { chat.style.display='flex'; canvas.classList.add('collapsed'); }
+  if (v==='canvas') { chat.style.display='none'; canvas.classList.remove('collapsed'); canvas.style.width='100%'; }
+  if (v==='split')  { chat.style.display='flex'; canvas.classList.remove('collapsed'); canvas.style.width='420px'; }
+}
+
+/* ─── CANVAS TABS ─── */
+function renderCanvasTabs() {
+  const el = document.getElementById('canvasTabs');
+  el.innerHTML = '';
+  CANVAS_TABS.forEach(t => {
+    const b = document.createElement('div');
+    b.className = 'ctab'+(t.id===activeTab?' active':'');
+    b.textContent = t.label;
+    b.onclick = () => { activeTab = t.id; renderCanvasTabs(); renderCanvas(t.id); };
+    el.appendChild(b);
+  });
+}
+
+/* ─── CANVAS RENDER ─── */
+function renderCanvas(tabId) {
+  const body = document.getElementById('canvasBody');
+  activeTab = tabId;
+  renderCanvasTabs();
+
+  const data = canvasData[tabId] || {};
+
+  if (tabId === 'story_spine') body.innerHTML = buildStorySpine(data);
+  else if (tabId === 'matrix_2x2') body.innerHTML = buildMatrix(data);
+  else if (tabId === 'causal_chain') body.innerHTML = buildCausalChain(data);
+  else if (tabId === 'pyramid') body.innerHTML = buildPyramid(data);
+  else if (tabId === 'system_loop') body.innerHTML = buildSystemLoop(data);
+  else if (tabId === 'stakeholder_map') body.innerHTML = buildStakeholderMap(data);
+}
+
+/* ── STORY SPINE ── */
+function buildStorySpine(d) {
+  const steps = [
+    { key:'context',  label:'Contexto', color:'#00e5a0', hint:'Qual é a situação atual?' },
+    { key:'conflict', label:'Conflito',  color:'#ff6b35', hint:'Qual é o problema ou tensão?' },
+    { key:'question', label:'Pergunta',  color:'#ffd60a', hint:'Qual a questão central?' },
+    { key:'insight',  label:'Insight',   color:'#7c5cfc', hint:'Qual a descoberta ou resposta?' },
+    { key:'so_what',  label:'So what?',  color:'#00e5a0', hint:'Qual a implicação para o negócio?' },
+    { key:'action',   label:'Ação',      color:'#ff4757', hint:'O que deve ser feito?' },
+  ];
+  const items = steps.map(s => `
+    <div class="spine-item">
+      <div class="spine-dot" style="background:${s.color}20;border:2px solid ${s.color};color:${s.color}">${steps.indexOf(s)+1}</div>
+      <div class="spine-content">
+        <div class="spine-label" style="color:${s.color}">${s.label}</div>
+        <input class="spine-input" placeholder="${s.hint}"
+          value="${(d[s.key]||'').replace(/"/g,'&quot;')}"
+          onchange="saveSpineField('${s.key}',this.value)" />
+      </div>
+    </div>`).join('');
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:var(--accent)"></div>Estrutura de Storytelling</div>
+    <div class="story-spine">${items}</div>
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()" id="aiPopBtn2">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function saveSpineField(key, val) {
+  if (!canvasData['story_spine']) canvasData['story_spine'] = {};
+  canvasData['story_spine'][key] = val;
+}
+
+/* ── MATRIX 2x2 ── */
+function buildMatrix(d) {
+  const cells = [
+    { key:'tl', label:'Alto Impacto · Baixo Esforço', color:'var(--accent)',  pos:'top-left' },
+    { key:'tr', label:'Alto Impacto · Alto Esforço',  color:'var(--warn)',    pos:'top-right' },
+    { key:'bl', label:'Baixo Impacto · Baixo Esforço',color:'var(--muted)',   pos:'bot-left' },
+    { key:'br', label:'Baixo Impacto · Alto Esforço', color:'var(--danger)',  pos:'bot-right' },
+  ];
+  const headers = `
+    <div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:4px;margin-bottom:4px;font-size:9px;color:var(--muted);text-align:center">
+      <div></div><div>↓ BAIXO ESFORÇO</div><div>↑ ALTO ESFORÇO</div>
+    </div>
+    <div style="display:grid;grid-template-columns:20px 1fr;gap:4px">
+      <div style="display:flex;flex-direction:column;justify-content:space-around;font-size:9px;color:var(--muted);writing-mode:vertical-rl;text-align:center;gap:4px">
+        <span>↑ ALTO</span><span>↓ BAIXO</span>
+      </div>`;
+  const grid = `<div class="matrix-2x2">${cells.map(c=>`
+    <div class="matrix-cell">
+      <div class="mc-label" style="color:${c.color}">${c.label}</div>
+      <textarea class="mc-input" placeholder="adicione itens..."
+        onchange="saveMatrixCell('${c.key}',this.value)">${d[c.key]||''}</textarea>
+    </div>`).join('')}</div>`;
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:var(--warn)"></div>Matriz Impacto × Esforço</div>
+    ${grid}
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function saveMatrixCell(key, val) {
+  if (!canvasData['matrix_2x2']) canvasData['matrix_2x2'] = {};
+  canvasData['matrix_2x2'][key] = val;
+}
+
+/* ── CAUSAL CHAIN ── */
+function buildCausalChain(d) {
+  const nodes = d.nodes || ['','','','',''];
+  const items = nodes.map((n,i) => `
+    <div class="causal-node">
+      <textarea rows="2" placeholder="causa ${i+1}"
+        onchange="saveCausalNode(${i},this.value)">${n}</textarea>
+    </div>
+    ${i<nodes.length-1?'<div class="causal-arrow">→</div>':''}`).join('');
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:var(--accent2)"></div>Cadeia Causal</div>
+    <div class="causal-chain">${items}</div>
+    <div style="margin-top:10px;display:flex;gap:6px">
+      <button class="ctbtn" onclick="addCausalNode()">+ nó</button>
+      <button class="ctbtn" onclick="removeCausalNode()">− nó</button>
+    </div>
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function saveCausalNode(i, val) {
+  if (!canvasData['causal_chain']) canvasData['causal_chain'] = { nodes:['','','','',''] };
+  canvasData['causal_chain'].nodes[i] = val;
+}
+
+function addCausalNode() {
+  if (!canvasData['causal_chain']) canvasData['causal_chain'] = { nodes:['','',''] };
+  canvasData['causal_chain'].nodes.push('');
+  renderCanvas('causal_chain');
+}
+
+function removeCausalNode() {
+  if (!canvasData['causal_chain']) return;
+  if (canvasData['causal_chain'].nodes.length > 2) canvasData['causal_chain'].nodes.pop();
+  renderCanvas('causal_chain');
+}
+
+/* ── PYRAMID ── */
+function buildPyramid(d) {
+  const levels = [
+    { key:'l1', label:'Propósito / Por quê', color:'#00e5a0', w:'100%' },
+    { key:'l2', label:'Estratégia / O quê',  color:'#7c5cfc', w:'83%' },
+    { key:'l3', label:'Iniciativas / Como',  color:'#ffd60a', w:'66%' },
+    { key:'l4', label:'Projetos / Quando',   color:'#ff6b35', w:'49%' },
+    { key:'l5', label:'Tarefas / Quem',      color:'#ff4757', w:'32%' },
+  ];
+  const items = levels.map(l=>`
+    <div class="pyr-level" style="width:${l.w};background:${l.color}15;border:1px solid ${l.color}40">
+      <div class="pyr-lname" style="color:${l.color}">${l.label}</div>
+      <input style="background:transparent;border:none;outline:none;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);width:100%;text-align:center"
+        placeholder="preencha..."
+        value="${(d[l.key]||'').replace(/"/g,'&quot;')}"
+        onchange="savePyrLevel('${l.key}',this.value)" />
+    </div>`).join('');
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:var(--accent3)"></div>Pirâmide Estratégica</div>
+    <div class="pyramid">${items}</div>
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function savePyrLevel(key, val) {
+  if (!canvasData['pyramid']) canvasData['pyramid'] = {};
+  canvasData['pyramid'][key] = val;
+}
+
+/* ── SYSTEM LOOP ── */
+function buildSystemLoop(d) {
+  const nodes = d.nodes || [
+    {label:'Dados brutos',x:180,y:50},
+    {label:'Análise',x:320,y:130},
+    {label:'Insights',x:320,y:250},
+    {label:'Decisão',x:180,y:330},
+    {label:'Ação',x:40,y:250},
+    {label:'Resultado',x:40,y:130},
+  ];
+  const arrows = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]];
+  const arrowColors = ['var(--accent)','var(--accent)','var(--accent2)','var(--accent2)','var(--accent3)','var(--accent3)'];
+  const svgArrows = arrows.map(([a,b],i)=>{
+    const na=nodes[a],nb=nodes[b];
+    const mx=(na.x+nb.x)/2, my=(na.y+nb.y)/2;
+    const dx=nb.x-na.x,dy=nb.y-na.y,len=Math.sqrt(dx*dx+dy*dy);
+    const ux=dx/len,uy=dy/len;
+    const ox=na.x+ux*46, oy=na.y+uy*16;
+    const tx=nb.x-ux*46, ty=nb.y-uy*16;
+    return `<line x1="${ox}" y1="${oy}" x2="${tx}" y2="${ty}" stroke="${arrowColors[i]}" stroke-width="1.5" stroke-opacity=".6" marker-end="url(#arr)"/>`;
+  }).join('');
+  const svgNodes = nodes.map((n,i)=>`
+    <g>
+      <rect x="${n.x-44}" y="${n.y-14}" width="88" height="28" rx="7"
+        fill="var(--card)" stroke="var(--border)" stroke-width="1"/>
+      <text x="${n.x}" y="${n.y+5}" text-anchor="middle"
+        font-family="JetBrains Mono,monospace" font-size="9" fill="var(--text)">${n.label}</text>
+    </g>`).join('');
+
+  const labels = d.labels || {};
+  const labelInputs = arrows.map(([a,b],i) => {
+    const na=nodes[a],nb=nodes[b];
+    const mx=((na.x+nb.x)/2)-30, my=((na.y+nb.y)/2)-8;
+    return `<input style="position:absolute;left:${mx}px;top:${my}px;width:60px;background:rgba(10,10,15,.8);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);outline:none;text-align:center"
+      placeholder="relação" value="${(labels[i]||'').replace(/"/g,'&quot;')}"
+      onchange="saveSysLabel(${i},this.value)" />`;
+  }).join('');
+
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:var(--accent3)"></div>Mapa de Sistema / Loop Causal</div>
+    <div style="position:relative">
+      <svg class="sys-svg" viewBox="0 0 360 380" height="340">
+        <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)" opacity=".7"/>
+        </marker></defs>
+        ${svgArrows}${svgNodes}
+      </svg>
+      ${labelInputs}
+    </div>
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function saveSysLabel(i, val) {
+  if (!canvasData['system_loop']) canvasData['system_loop'] = {};
+  if (!canvasData['system_loop'].labels) canvasData['system_loop'].labels = {};
+  canvasData['system_loop'].labels[i] = val;
+}
+
+/* ── STAKEHOLDER MAP ── */
+function buildStakeholderMap(d) {
+  const stakeholders = d.stakeholders || [
+    {name:'CEO',power:9,interest:6,color:'#ff4757'},
+    {name:'CFO',power:8,interest:5,color:'#ffd60a'},
+    {name:'CTO',power:7,interest:8,color:'#7c5cfc'},
+    {name:'Produto',power:5,interest:9,color:'#00e5a0'},
+    {name:'Analytics',power:4,interest:10,color:'#00e5a0'},
+    {name:'Jurídico',power:6,interest:3,color:'#ff6b35'},
+  ];
+  const W=360, H=300;
+  const toX = v => 20 + (v/10)*(W-40);
+  const toY = v => H-20 - (v/10)*(H-40);
+
+  const dots = stakeholders.map(s =>
+    `<circle cx="${toX(s.interest)}" cy="${toY(s.power)}" r="20" fill="${s.color}20" stroke="${s.color}" stroke-width="1.5"/>
+     <text x="${toX(s.interest)}" y="${toY(s.power)+4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="${s.color}">${s.name}</text>`
+  ).join('');
+
+  const inputRows = stakeholders.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+      <input style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text);outline:none"
+        value="${s.name}" onchange="saveStakeholderName(${i},this.value)" />
+      <span style="font-size:9px;color:var(--muted)">P:</span>
+      <input type="range" min="1" max="10" value="${s.power}" style="width:50px"
+        oninput="saveStakeholderPower(${i},this.value)" />
+      <span style="font-size:9px;color:var(--muted)">I:</span>
+      <input type="range" min="1" max="10" value="${s.interest}" style="width:50px"
+        oninput="saveStakeholderInterest(${i},this.value)" />
+    </div>`).join('');
+
+  return `<div class="fw-box"><div class="fw-title"><div class="dot" style="background:#ff4757"></div>Mapa de Stakeholders</div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="border:1px solid var(--border);border-radius:8px;background:var(--surface)">
+      <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="var(--border)" stroke-dasharray="4"/>
+      <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="var(--border)" stroke-dasharray="4"/>
+      <text x="${W/2+4}" y="12" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--muted)">→ INTERESSE</text>
+      <text x="4" y="${H/2-4}" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--muted)">↑ PODER</text>
+      <text x="4" y="14" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--muted)">Mantenha informado</text>
+      <text x="${W/2+4}" y="14" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--danger)">Gerencie de perto</text>
+      <text x="4" y="${H-4}" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--muted)">Monitor</text>
+      <text x="${W/2+4}" y="${H-4}" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--warn)">Mantenha satisfeito</text>
+      ${dots}
+    </svg>
+    <div style="margin-top:10px">${inputRows}</div>
+    <button class="ai-gen-btn" onclick="aiPopulateCanvas()">✦ IA gera a partir da conversa</button>
+  </div>`;
+}
+
+function saveStakeholderName(i,v){ ensureSH(); canvasData.stakeholder_map.stakeholders[i].name=v; renderCanvas('stakeholder_map'); }
+function saveStakeholderPower(i,v){ ensureSH(); canvasData.stakeholder_map.stakeholders[i].power=+v; renderCanvas('stakeholder_map'); }
+function saveStakeholderInterest(i,v){ ensureSH(); canvasData.stakeholder_map.stakeholders[i].interest=+v; renderCanvas('stakeholder_map'); }
+function ensureSH(){
+  if(!canvasData.stakeholder_map) canvasData.stakeholder_map={stakeholders:[
+    {name:'CEO',power:9,interest:6,color:'#ff4757'},
+    {name:'CFO',power:8,interest:5,color:'#ffd60a'},
+    {name:'CTO',power:7,interest:8,color:'#7c5cfc'},
+    {name:'Produto',power:5,interest:9,color:'#00e5a0'},
+    {name:'Analytics',power:4,interest:10,color:'#00e5a0'},
+    {name:'Jurídico',power:6,interest:3,color:'#ff6b35'},
+  ]};
+}
+
+function clearCanvas() { canvasData[activeTab] = {}; renderCanvas(activeTab); }
+
+/* ─── AI POPULATE CANVAS ─── */
+async function aiPopulateCanvas() {
+  const btn = document.getElementById('aiPopBtn') || document.getElementById('aiPopBtn2');
+  if (btn) btn.disabled = true;
+  showToast('✦ IA analisando conversa...');
+
+  const ctx = lastConversationContext || 'Não há contexto ainda.';
+
+  const prompts = {
+    story_spine: `Com base nesta conversa:\n\n${ctx}\n\nPreencha os 6 campos do storytelling em JSON (context, conflict, question, insight, so_what, action). Máx 15 palavras por campo. Retorne SOMENTE o JSON.`,
+    matrix_2x2:  `Com base nesta conversa:\n\n${ctx}\n\nPreencha uma matriz Impacto×Esforço com iniciativas/ações em JSON (tl, tr, bl, br — cada campo uma lista de itens separados por vírgula). Máx 3 itens por quadrante. Retorne SOMENTE o JSON.`,
+    causal_chain:`Com base nesta conversa:\n\n${ctx}\n\nMonte uma cadeia causal com 5 nós em JSON: {"nodes":["causa1","causa2","causa3","causa4","efeito"]}. Máx 6 palavras por nó. Retorne SOMENTE o JSON.`,
+    pyramid:     `Com base nesta conversa:\n\n${ctx}\n\nPreencha a pirâmide estratégica em JSON (l1: propósito, l2: estratégia, l3: iniciativas, l4: projetos, l5: tarefas). Máx 12 palavras por nível. Retorne SOMENTE o JSON.`,
+    system_loop: `Com base nesta conversa:\n\n${ctx}\n\nIdentifique as relações do sistema e retorne labels para as 6 arestas do loop: {"labels":{"0":"rel1","1":"rel2","2":"rel3","3":"rel4","4":"rel5","5":"rel6"}}. Máx 4 palavras. Retorne SOMENTE o JSON.`,
+    stakeholder_map:`Com base nesta conversa:\n\n${ctx}\n\nMapeie os stakeholders relevantes em JSON: {"stakeholders":[{"name":"X","power":7,"interest":8,"color":"#00e5a0"},...]} — até 6 stakeholders, poder e interesse de 1-10. Retorne SOMENTE o JSON.`,
+  };
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers: getApiHeaders(),
+      body: JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:600,
+        messages:[{ role:'user', content: prompts[activeTab] }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    canvasData[activeTab] = JSON.parse(clean);
+    renderCanvas(activeTab);
+    showToast('✦ Canvas preenchido!');
+    // auto switch to split if in chat-only
+    if (currentView === 'chat') setView('split');
+  } catch(e) {
+    showToast('Erro ao gerar canvas');
+  }
+  if (btn) btn.disabled = false;
+}
+
+/* ═══════════════════════════════════════════════
+   CHAT
+═══════════════════════════════════════════════ */
+function startConvo() {
+  const intr = (INTROS[STAGES[stageIdx].id]||{})[mode] || (INTROS[STAGES[stageIdx].id]||{})['guided'] || 'Vamos começar.';
+  addMsg('agent', intr);
+}
+
+function addMsg(role, html) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg '+(role==='user'?'user':'agent');
+  div.innerHTML = `<div class="av ${role==='user'?'usr':'agent'}">${role==='user'?'👤':'🤖'}</div>
+    <div class="bubble">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addLoading() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg agent'; div.id = 'loading';
+  div.innerHTML = `<div class="av agent">🤖</div><div class="bubble"><div class="ldots"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function rmLoading() { const e=document.getElementById('loading'); if(e) e.remove(); }
+
+function fmt(text) {
+  // detect and extract canvas trigger before formatting
+  text = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  text = text.replace(/\*(.*?)\*/g,'<em>$1</em>');
+  text = text.replace(/`(.*?)`/g,'<code style="background:rgba(0,229,160,.1);padding:1px 4px;border-radius:3px;font-size:10px;color:var(--accent)">$1</code>');
+  text = text.replace(/^#{1,3}\s(.+)$/gm,'<div style="font-family:Syne,sans-serif;font-weight:700;font-size:10px;color:var(--accent2);margin:8px 0 3px;letter-spacing:.06em;text-transform:uppercase;">$1</div>');
+  text = text.replace(/^[-•]\s(.+)$/gm,'<div style="padding-left:12px;position:relative;margin:2px 0"><span style="position:absolute;left:0;color:var(--accent)">›</span>$1</div>');
+  text = text.replace(/📊(.+)/g,'<div style="margin-top:8px;padding:6px 10px;background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:5px;font-size:10px;color:var(--accent)">📊$1</div>');
+  text = text.replace(/\n\n/g,'<br><br>');
+  text = text.replace(/\n/g,'<br>');
+  return text;
+}
+
+function parseCanvasTrigger(text) {
+  const match = text.match(/\[CANVAS:([a-z_]+)\|([^\]]+)\]/);
+  if (match) return { type: match[1], title: match[2] };
+  return null;
+}
+
+function stripCanvasTrigger(text) {
+  return text.replace(/\[CANVAS:[^\]]+\]/g, '').trim();
+}
+
+function extractXP(text) {
+  const m = text.match(/[0-9]\/5/g);
+  if (!m) return 5;
+  const avg = m.map(x=>+x[0]).reduce((a,b)=>a+b,0)/m.length;
+  return Math.round(avg*2.5);
+}
+
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+
+async function send() {
+  const inp = document.getElementById('uInput');
+  const text = inp.value.trim(); if(!text) return;
+  inp.value=''; inp.style.height='auto';
+  document.getElementById('sendBtn').disabled = true;
+
+  addMsg('user', text.replace(/\n/g,'<br>'));
+  addLoading();
+  history.push({role:'user',content:text});
+
+  // build context summary for canvas
+  lastConversationContext = history.slice(-6).map(m=>`${m.role==='user'?'Usuário':'Agente'}: ${m.content}`).join('\n');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers: getApiHeaders(),
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:900,
+        system: getSystemForStage(STAGES[stageIdx].id),
+        messages: history
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const errMsg = data?.error?.message || JSON.stringify(data);
+      rmLoading();
+      addMsg('agent', `<span style="color:var(--danger)">Erro da API (${res.status}): ${errMsg}</span>`);
+      document.getElementById('sendBtn').disabled = false;
+      return;
+    }
+    let reply = data.content?.[0]?.text || 'Erro ao processar.';
+    history.push({role:'assistant',content:reply});
+
+    // detect canvas trigger
+    const trigger = parseCanvasTrigger(reply);
+    const cleanReply = stripCanvasTrigger(reply);
+
+    rmLoading();
+
+    // build bubble
+    let bubbleHtml = fmt(cleanReply);
+
+    if (trigger) {
+      bubbleHtml += `<div class="canvas-chip" onclick="openCanvasTab('${trigger.type}')">
+        🗺 Ver no canvas: ${trigger.title} →
+      </div>`;
+    }
+
+    addMsg('agent', bubbleHtml);
+    gainXP(extractXP(reply));
+
+    // pattern detection
+    const found = detectPatterns(text, reply);
+    found.forEach(p => addMemory(p.icon, `${p.label} · ${p.tip}`));
+    saveState();
+
+    // if canvas trigger, auto-populate
+    if (trigger) {
+      activeTab = trigger.type;
+      setTimeout(() => {
+        if (currentView==='chat') setView('split');
+        renderCanvasTabs();
+        renderCanvas(trigger.type);
+        setTimeout(() => aiPopulateCanvas(), 400);
+      }, 600);
+    }
+
+  } catch(e) {
+    rmLoading();
+    addMsg('agent','<span style="color:var(--danger)">Erro de conexão. Tente novamente.</span>');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+}
+
+function openCanvasTab(type) {
+  activeTab = type;
+  if (currentView==='chat') setView('split');
+  renderCanvasTabs();
+  renderCanvas(type);
+}
+
+/* ─── TOAST ─── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
